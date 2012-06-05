@@ -12,12 +12,23 @@ infixl 6 |\/|   -- pure  in paper  , pure in Haskell
 infixl 6 |--|   -- (*)   in paper  ,      in Haskell         -- that is, this isn't defined in Haskell
 
 
+newtype Vi   i = OutI    { out          :: i (Vi i)                             }
+newtype Vii  i = OutII   { outII        :: i (Vi i, Vi i)                       }
+newtype Viii i = OutIII  { outIII       :: i (Vi i, Vi i, Vi i)                 }
+newtype IV   i = OutIV   { outIV        :: i (Vi i, Vi i, Vi i, Vi i)           }
+newtype V    i = OutV    { outV         :: i (Vi i, Vi i, Vi i, Vi i, Vi i)     }
+newtype Ao   o = InaO    { (|-°|)       :: o (Ao o)                             }
+newtype Aoo  o = InaOO   { (|--°|)      :: o (Aoo o, Ao o)                      }
+newtype Aooo o = InaOOO  { (|---°|)     :: o (Aooo o, Aoo o, Ao o)              }
+newtype OA   o = InaOA   { (|°----|)    :: o (OA o, Aooo o, Aoo o, Ao o)        }
+newtype An   o = InaA    { (|°/\°|)     :: o (Ao o, Ao o, Ao o, Ao o, Ao o)     }
+
 
 class A the where                       -- has the same kind as Functor, namely (* -> *) -> Constraint
    (|\/|)                :: v -> the v
    (|--|>|)              :: the (l -> r) -> (the l -> the r)
 
-class V the where                                            -- has kind (* -> *) -> * -> Constraint
+class Careful the where                                            -- has kind (* -> *) -> * -> Constraint
      unit                :: the ()                           -- normally ()
      vmap                :: (l -> r) -> (the l  ->  the r)
      (|--|)              ::             (the l) -> (the r) -> the (l,r)
@@ -87,7 +98,6 @@ liftA :: A a => (l -> r) -> a l -> a r
 -- "should be pure l <*> r"?
 --
 
-liftA l r = |\/| l |--|>| r
 
 -- test2.hs:86:13: parse error on input `|\/|'
 -- Failed, modules loaded: none.
