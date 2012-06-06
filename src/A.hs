@@ -23,22 +23,64 @@ newtype Aooo o = InaOOO  { (|---°|)     :: o (Aooo o, Aoo o, Ao o)             
 newtype OA   o = InaOA   { (|°----|)    :: o (OA o, Aooo o, Aoo o, Ao o)        }
 newtype An   o = InaA    { (|°/\°|)     :: o (Ao o, Ao o, Ao o, Ao o, Ao o)     }
 
+curry1   :: ((a) -> b)        -> a -> b
+curry2   :: ((a,b) -> c)      -> a -> b -> c
+curry3   :: ((a,b,c) -> d)    -> a -> b -> c -> d
+curry4   :: ((a,b,c,d) -> e)  -> a -> b -> c -> d -> e
+curry5   :: ((a,b,c,d,e) -> f)-> a -> b -> c -> d -> e -> f
 
-class A the where                       -- has the same kind as Functor, namely (* -> *) -> Constraint
+
+uncurry1 :: (a -> b)                     -> (a)     -> b
+uncurry2 :: (a -> b -> c)                -> (a,b)   -> c
+uncurry3 :: (a -> b -> c -> d)           -> (a,b,c) -> d
+uncurry4 :: (a -> b -> c -> d -> e)      -> (a,b,c,d)   -> e
+uncurry5 :: (a -> b -> c -> d -> e -> f) -> (a,b,c,d,e) -> f
+
+curry1 f x          = f (x)
+curry2 f x y        = f (x,y)
+curry3 f x y z      = f (x,y,z)
+curry4 f x y z a    = f (x,y,z,a)
+curry5 f x y z a b  = f (x,y,z,a,b)
+
+uncurry1 f (x) = f x
+uncurry2 f (x,y) = f x y
+uncurry3 f (x,y,z) = f x y z
+uncurry4 f (x,y,z,a) = f x y z a
+uncurry5 f (x,y,z,a,b) = f x y z a b
+
+class A the where                                   -- has the same kind as Functor, namely (* -> *)      -> Constraint
    (|\/|)                :: v -> the v
    (|--|>|)              :: the (l -> r) -> (the l -> the r)
 
-class Careful the where                                            -- has kind (* -> *) -> * -> Constraint
-     unit                :: the ()                           -- normally ()
-     vmap                :: (l -> r) -> (the l  ->  the r)
-     (|--|)              ::             (the l) -> (the r) -> the (l,r)
+class LinearA the where                                   -- has the same kind as Functor, namely (* -> *)      -> Constraint
+   (|---|)                :: v -> the v
+   (|---|>|)              :: the (l -> r) -> (the l -> the r)
+   (|---|<|)              :: the (l -> c -> r) -> the c -> the (l -> r)
+   -- A has four Laws:
+   -- (0) A   Identity   :   pure iId         <> u           = u
+   -- (1) A   Composition:   pure (.)         <> u <> v <> w = u <> (<> v w)
+   -- (2) The Homomprhism:   pure f <> pure x                = pure (f x)
+   -- (3) The Interchange:                       u <> pure x = pure (<> x) <> u
+
+class S the where                                                               -- has kind (* -> *) -> * -> Constraint
+     unit                :: the ()                                              -- normally ()
+     vmap                :: (l -> r) -> ((the l)  -> (the r))
+     (|--|)              ::              (the l)  -> (the r) -> the (l,r)
      unit                = pure ()
      vmap l r            = vmap app ((pure l) |--| r)
-
+     
      -- This is *not* part of this typeclass, but otherwise Haskell can't infer (A ..) context!
      pure                :: r -> the r
      pure                = (\f -> vmap (const f) unit)
-     
+
+     -- S has six laws where @u = unit@:
+     --
+     -- (0) F-identity   :    map id x            = x
+     -- (1) F-composition:    map (l . r) x       = map l (map r x)
+     -- (2) *-naturality :    map (l x r) (x * y) = map l x * map r y
+     -- (3) snd |-!| id  :    map   snd   (u * y) =                 y
+     -- (4) fst |!-| id  :    map   fst   (x * u) =       x
+     -- (5) associativity:
 
 
 app (f,x) = f x
