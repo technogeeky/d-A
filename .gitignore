@@ -1,4 +1,5 @@
 dist
+include
 cabal-dev
 *.o
 *.hi
