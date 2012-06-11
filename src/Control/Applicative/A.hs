@@ -1,4 +1,4 @@
-module Control.A where
+module Control.Applicative.A where
 
 import Prelude hiding ((||),(&&),(<=),(>=),(==))
 
@@ -7,51 +7,66 @@ import Data.Functor.Constant (Constant(..))
 import Control.Monad (ap)
 import Data.Monoid (Monoid(..))
 
+import Control.Dimension
+
 infixl 6 |--|>| -- <>    in paper  , <*>  in Haskell         -- hinze uses 6, control.applicative uses 4
 infixl 6 |\/|   -- pure  in paper  , pure in Haskell
 infixl 6 |--|   -- (*)   in paper  ,      in Haskell         -- that is, this isn't defined in Haskell
 
 -- |
 ----------------------------------------------------------------------------------------------------------------------------------------
--- A           {- Symmetric Interface -}
+-- A           {- Asymetric Interface -}
 ----------------------------------------------------------------------------------------------------------------------------------------
-class A the where                                   -- has the same kind as Functor, namely (* -> *)      -> Constraint
-   (|\/|)                :: v -> the v
-   (|--|>|)              :: the (l -> r) -> (the l -> the r)
+class A idi where                                   -- has the same kind as Functor, namely (* -> *)      -> Constraint
+--   (|\/|)              :: v -> idi v
+--   (|--|>|)            :: idi (l -> r) -> (idi l -> idi r)
+   
+   pure               :: v -> idi v
+   (<*>)              :: idi (l -> r) -> (idi l -> idi r)
 
+
+   law0_0              :: idi r -> idi r
+   law0_1              :: idi r -> idi r
+   law0_0 u = ( (|\/|) id )
+                 |--|>| u
+   law0_1 u = liftA (id) u
    -- A has four Laws:
    -- (0) A   Identity   :   pure iId         <*> u           = u
    -- (1) A   Composition:   pure (.)         <*> u <*> v <*> w = u <*> (<*> v w)
    -- (2) The Homomprhism:   pure f <*> pure x                = pure (f x)
    -- (3) The Interchange:                       u <*> pure x = pure (<*> x) <*> u
 
-     law0_0 u = ( (|\/|) id )
-                   |--|>| u
-
-     law0_1 u = liftA (id) u
+     
 
 -- |
 ----------------------------------------------------------------------------------------------------------------------------------------
 -- A           {- Symmetric Interface (with flip) -}
 ----------------------------------------------------------------------------------------------------------------------------------------
-class LinearA the where                                   -- has the same kind as Functor, namely (* -> *)      -> Constraint
-   (|---|)                :: v -> the v
-   (|---|>|)              :: the (l -> r) -> (the l -> the r)
-   (|---|<|)              :: the (l -> c -> r) -> the c -> the (l -> r)
+class LinearA idi where                                   -- has idi same kind as Functor, namely (* -> *)      -> Constraint
+   (|---|)                :: v -> idi v
+   (|---|>|)              :: idi (l -> r) -> (idi l -> idi r)
+   (|---|<|)              :: idi ((l -> c -> r) -> idi c -> idi (l -> r))
 
+class A idi => WeakA idi where
+     i :: idi (l -> l)
+     b :: idi (     (c -> r) -> (l -> c) -> (l -> r))
+     c :: idi ((l -> c -> r) ->       c  -> (l -> r))
+     s :: idi ((l -> c -> r) -> (l -> c) -> (l -> r))
+
+     i = (|\/|) id
 ----------------------------------------------------------------------------------------------------------------------------------------
--- S           {- "Asymmetric" Interface -}
+-- S           {- "Ssymmetric" Interface -}
 ----------------------------------------------------------------------------------------------------------------------------------------
 
-class S the where                                                               -- has kind (* -> *) -> * -> Constraint
-     unit                :: the ()                                              -- normally ()
-     vmap                :: (l -> r) -> ((the l)  -> (the r))
-     (|--|)              ::              (the l)  -> (the r) -> the (l,r)
+class (Functor idi) => S idi where                                                               -- has kind (* -> *) -> * -> Constraint
+     unit                :: idi ()                                              -- normally ()
+     vmap                :: (l -> r) -> ((idi l)  -> (idi r))
+     (|--|)              ::              (idi l)  -> (idi r) -> idi (l,r)
      unit                = pure ()
      vmap l r            = vmap app ((pure l) |--| r)
      
      -- This is *not* part of this typeclass, but otherwise Haskell can't infer (A ..) context!
-     pure                :: r -> the r
+     pure                :: r -> idi r
      pure                = (\f -> vmap (const f) unit)
 
      -- S has six laws where @u = unit@:

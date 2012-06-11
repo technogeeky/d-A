@@ -47,7 +47,8 @@ cabal-version:       >=1.8
 
 library
   -- Modules exported by the library.
-  exposed-modules:     A
+  exposed-modules:     Control.A
+                       Control.Dimension
   
   -- Modules included in this library but not exported.
   -- other-modules:       

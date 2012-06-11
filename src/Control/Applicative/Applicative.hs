@@ -213,16 +213,16 @@ instance Functor (Const m) where
     fmap _ (Const v) = Const v
 
 instance Monoid m => Applicative (Const m) where
-    pure _ = Const mempty
-    Const f <*> Const v = Const (f `mappend` v)
+    pure _                      = Const mempty
+    Const f <*> Const v         = Const (f `mappend` v)
 
 newtype WrappedMonad m a = WrapMonad { unwrapMonad :: m a }
 
 instance Monad m => Functor (WrappedMonad m) where
-    fmap f (WrapMonad v) = WrapMonad (liftM f v)
+    fmap f (WrapMonad v)        = WrapMonad (liftM f v)
 
 instance Monad m => Applicative (WrappedMonad m) where
-    pure = WrapMonad . return
+    pure                        = WrapMonad . return
     WrapMonad f <*> WrapMonad v = WrapMonad (f `ap` v)
 
 instance MonadPlus m => Alternative (WrappedMonad m) where
@@ -246,13 +246,13 @@ instance (ArrowZero a, ArrowPlus a) => Alternative (WrappedArrow a b) where
 --
 -- @f '<$>' 'ZipList' xs1 '<*>' ... '<*>' 'ZipList' xsn = 'ZipList' (zipWithn f xs1 ... xsn)@
 --
-newtype ZipList a = ZipList { getZipList :: [a] }
+newtype ZipList a             = ZipList { getZipList :: [a] }
 
 instance Functor ZipList where
-    fmap f (ZipList xs) = ZipList (map f xs)
+    fmap f (ZipList xs)       = ZipList (map f xs)
 
 instance Applicative ZipList where
-    pure x = ZipList (repeat x)
+    pure x                    = ZipList (repeat x)
     ZipList fs <*> ZipList xs = ZipList (zipWith id fs xs)
 
 -- extra functions
