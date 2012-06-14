@@ -106,9 +106,8 @@ blah = runIDI ex1 eta_env
 norm :: Term env a -> Term env a
 
 norm e = case norm1 of Map f u -> case norm2 of Map g v ->  Map (f . g) v
-     where norm1 = undefined
-           norm2 = undefined
-
+          where norm1 = undefined
+                norm2 = undefined
 
 norm1 :: Term env a -> Term env a
 norm1 (Var n)      =                                 Map  (id)  (Var n)
@@ -118,8 +117,54 @@ norm1 (Map f e)    = case norm1 e of
 norm1 (Pair e1 e2) = case (norm1 e1 , norm1 e2 ) of 
                           (Map f1 u1, Map f2 u2)  -> Pair (Map f1 u1) (Map f2 u2)
 
---norm1 (App e1 e2) = case (norm1 e1, norm1 e2) of (Map f1 u1, Map f2 u2) -> Map (f2 . f1) 
 
+norm2 :: Term env a -> Term env a
+norm2 (Var n)      =                                 Map  (id)  (Var n)
+norm2 (Unit)       =                                 Map   id    Unit
+
+norm2 (Pair Unit e2)     = case ( {- -----,-} norm2 e2  ) of 
+                                ( {- -----,-} Map f2 u2 )   -> Pair (Unit) (Map f2 u2)
+
+norm2 (Pair e1 Unit)     = case ( norm2 e1  {-, ----- -} ) of 
+                                ( Map f1 u1 {-, ----- -} )  -> Pair (Map f1 u1) (Unit)
+
+norm2 (Pair e1 (Var n))  = case ( norm2 e1  {-, ----- -} ) of 
+                                ( Map f1 u1 {-, ----- -} )  -> Pair (Map f1 u1) (Map id (Var n))
+
+-- Why was this "case" left out? Because we know the Var will always be in the "snd"?
+norm2 (Pair (Var n) e2)  = case ( {- -----,-} norm2 e2  ) of 
+                                ( {- -----,-} Map f2 u2 )   -> Pair (Map id (Var n)) (Map f2 u2)
+
+
+norm2 (Pair e1 (Pair e2 e3)) = case 
+                                (norm2 (Pair (Pair e1 e2) e3)) of
+                                (Map f u                     )   -> Map (assocr . f) u
+
+
+-- taken from hackage/pointless-haskell
+
+infix 6  /\
+-- | The infix split combinator.
+(/\) :: (a -> b) -> (a -> c) -> a -> (b,c)
+(/\) f g x = (f x, g x)
+
+infix 7  ><
+-- The infix product combinator.
+(><) :: (a -> b) -> (c -> d) -> (a,c) -> (b,d)
+f >< g = f . fst /\ g . snd
+
+-- | Associates nested products to the right.
+assocr :: ((a,b),c) -> (a,(b,c))
+assocr = fst . fst  /\  (snd >< id)
+
+infix 4 \/
+-- | The infix either combinator.
+(\/) :: (b -> a) -> (c -> a) -> Either b c -> a
+(\/) = either
+
+
+
+-- More roman-like numerals:
 --  OII  :: 
 --  III  :: 
 --  IVO
