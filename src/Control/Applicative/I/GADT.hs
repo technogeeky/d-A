@@ -103,42 +103,59 @@ eta_env = undefined
 
 blah = runIDI ex1 eta_env
 
-norm :: Term env a -> Term env a
+-------------------------------------------------------------------------------------------------
+--             NORMS
+--
+--             hopefully faithfully copied from page 7 of:
+--
+--             www.cs.ox.ac.uk/ralf.hinze/Lifting.pdf
+-------------------------------------------------------------------------------------------------
 
-norm e = case norm1 of Map f u -> case norm2 of Map g v ->  Map (f . g) v
+norm  :: Term env a -> Term env a
+norm1 :: Term env a -> Term env a
+norm2 :: Term env a -> Term env a
+
+
+norm0 e = case norm1 of Map f u -> case norm2 of Map g v ->  Map (f . g) v
           where norm1 = undefined
                 norm2 = undefined
 
-norm1 :: Term env a -> Term env a
-norm1 (Var n)      =                                 Map  (id)  (Var n)
-norm1 (Unit)       =                                 Map   id    Unit
-norm1 (Map f e)    = case norm1 e of
-      (Map g u)                                   -> Map (f . g)   u
-norm1 (Pair e1 e2) = case (norm1 e1 , norm1 e2 ) of 
-                          (Map f1 u1, Map f2 u2)  -> Pair (Map f1 u1) (Map f2 u2)
+------------------------------------------------------------------------------------------------
+-- functor (id)
+norm1 (Var n)            = Map  (id)  (Var n)
+norm1 (Unit)             = Map   id    Unit
 
+-- functor (.)
+norm1 (Map f e)          = case norm1 e of
+      (Map g u)                                             -> Map (f . g)   u
 
-norm2 :: Term env a -> Term env a
-norm2 (Var n)      =                                 Map  (id)  (Var n)
-norm2 (Unit)       =                                 Map   id    Unit
-
+-- naturality of '*'
+norm1 (Pair e1 e2)       = case (norm1 e1 , norm1 e2 ) of 
+                          (Map f1 u1, Map f2 u2)            -> Pair (Map f1 u1) (Map f2 u2)
+------------------------------------------------------------------------------------------------
+-- functor (id)
+norm2 (Var n)            = Map  (id)  (Var n)
+norm2 (Unit)             = Map   id    Unit
+-- left identity
 norm2 (Pair Unit e2)     = case ( {- -----,-} norm2 e2  ) of 
                                 ( {- -----,-} Map f2 u2 )   -> Pair (Unit) (Map f2 u2)
-
+-- right identity
 norm2 (Pair e1 Unit)     = case ( norm2 e1  {-, ----- -} ) of 
                                 ( Map f1 u1 {-, ----- -} )  -> Pair (Map f1 u1) (Unit)
-
+-- unnamed law
 norm2 (Pair e1 (Var n))  = case ( norm2 e1  {-, ----- -} ) of 
                                 ( Map f1 u1 {-, ----- -} )  -> Pair (Map f1 u1) (Map id (Var n))
 
 -- Why was this "case" left out? Because we know the Var will always be in the "snd"?
-norm2 (Pair (Var n) e2)  = case ( {- -----,-} norm2 e2  ) of 
-                                ( {- -----,-} Map f2 u2 )   -> Pair (Map id (Var n)) (Map f2 u2)
-
-
-norm2 (Pair e1 (Pair e2 e3)) = case 
+norm2 (Pair (Var n) e2)  = case ( {- -----,-} norm2 e2   ) of 
+                                ( {- -----,-} Map f2 u2  )  -> Pair (Map id (Var n)) (Map f2 u2)
+                                
+-- associativity
+norm2 (Pair e1 (Pair e2 e3)) 
+                         = case 
                                 (norm2 (Pair (Pair e1 e2) e3)) of
                                 (Map f u                     )   -> Map (assocr . f) u
+------------------------------------------------------------------------------------------------
 
 
 -- taken from hackage/pointless-haskell
