@@ -111,7 +111,7 @@ blah = runIDI ex1 eta_env
 --             www.cs.ox.ac.uk/ralf.hinze/Lifting.pdf
 -------------------------------------------------------------------------------------------------
 
-norm  :: Term env a -> Term env a
+norm0 :: Term env a -> Term env a
 norm1 :: Term env a -> Term env a
 norm2 :: Term env a -> Term env a
 
